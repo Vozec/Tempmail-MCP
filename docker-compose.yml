@@ -1,0 +1,24 @@
+services:
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    environment:
+      - LOG_LEVEL=info
+      - LOG_HTML=false
+      - CAPTCHA_SOLVER=none
+    ports:
+      - "8191:8191"
+    restart: unless-stopped
+
+  tempmail-api:
+    build: .
+    container_name: tempmail-api
+    ports:
+      - "8000:8000"
+    environment:
+      - FLARESOLVERR_URL=http://flaresolverr:8191
+      - GMAIL_EMAIL=${GMAIL_EMAIL:-}
+      - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD:-}
+    depends_on:
+      - flaresolverr
+    restart: unless-stopped
