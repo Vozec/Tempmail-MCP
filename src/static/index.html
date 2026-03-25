@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>tempmail</title>
+<title>✉ tempmail</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230b0b0b'/%3E%3Crect x='4' y='9' width='24' height='16' rx='3' fill='none' stroke='%233b82f6' stroke-width='2'/%3E%3Cpath d='M4 12l12 8 12-8' stroke='%233b82f6' stroke-width='2' fill='none'/%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"
         crossorigin="anonymous" referrerpolicy="no-referrer" async></script>
 <style>
@@ -60,6 +61,13 @@ body{font-family:var(--sans);font-size:13px;line-height:1.5;-webkit-font-smoothi
   white-space:nowrap;flex-shrink:0;
 }
 .tb-logo-acc{color:var(--acc)}
+.tb-docs{
+  font-family:var(--mono);font-size:9px;letter-spacing:.5px;
+  color:var(--t3);text-decoration:none;flex-shrink:0;
+  padding:3px 7px;border:1px solid var(--b1);border-radius:3px;
+  transition:color .1s,border-color .1s;
+}
+.tb-docs:hover{color:var(--acc);border-color:var(--acc-b)}
 
 /* health dot */
 .health{display:flex;align-items:center;gap:5px;flex-shrink:0}
@@ -462,6 +470,7 @@ body{font-family:var(--sans);font-size:13px;line-height:1.5;-webkit-font-smoothi
   <!-- ════════════════ TOPBAR ════════════════ -->
   <div class="topbar">
     <div class="tb-logo">[tempmail<span class="tb-logo-acc">·</span>]</div>
+    <a class="tb-docs" href="/docs" target="_blank" title="API documentation">api docs</a>
     <div class="health">
       <div class="hdot checking" id="hdot"></div>
       <span class="htext" id="htxt">—</span>

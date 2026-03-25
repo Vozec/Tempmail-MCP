@@ -1,5 +1,9 @@
 # tempmail-api
 
+<p align="center">
+  <img src=".github/image.png" alt="tempmail UI" width="900">
+</p>
+
 A self-hosted temporary email REST API with a built-in web UI and optional MCP server.
 Multiple disposable-inbox providers are aggregated behind a single API; broken providers are automatically detected and disabled at startup.
 
@@ -11,7 +15,8 @@ Multiple disposable-inbox providers are aggregated behind a single API; broken p
 - **Auto-fallback** — picks the first healthy provider in priority order
 - **Circuit breaker** — providers that fail 3× in a row are auto-disabled; re-enable via API
 - **Startup health-check** — broken providers are disabled before the first request
-- **Web UI** — two-column email client, multi-account, localStorage persistence, auto-refresh
+- **Web UI** — tab-based email client, multi-account, localStorage persistence, auto-refresh, browser notifications
+- **Shared/pinned emails** — pin mailboxes server-side so every client can use them
 - **Swagger docs** — `/docs`
 - **MCP server** — optional, usable standalone by Claude / any MCP client
 - **Cloudflare bypass** — via [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) for providers that require it
@@ -41,6 +46,7 @@ docker compose up -d
 | `ENABLE_FRONTEND` | `true` | Serve the web UI |
 | `FLARESOLVERR_URL` | `http://localhost:8191` | FlareSolverr endpoint |
 | `HEALTH_CHECK_ON_STARTUP` | `true` | Probe all providers at startup and disable failures |
+| `SHARED_EMAILS_PATH` | `shared_emails.json` | Path to the server-side pinned-emails store |
 | `GMAIL_EMAIL` | — | Gmail address (for Gmail IMAP provider) |
 | `GMAIL_APP_PASSWORD` | — | Gmail app password |
 
@@ -48,26 +54,140 @@ docker compose up -d
 
 ## REST API
 
+### System
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/health` | Health status of all providers (200 if all ok, 207 if degraded) |
+
+**Response `GET /api/health`**
+```json
+{
+  "healthy": true,
+  "providers": {
+    "mail.tm":    { "status": "ok" },
+    "mailticking": { "status": "disabled", "failures": 3 }
+  }
+}
+```
+
+---
+
 ### Providers
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/api/providers` | List providers with status (`disabled`, `failures`) |
+| `GET` | `/api/providers` | List all providers with enabled/failure state |
 | `POST` | `/api/providers/{name}/disable` | Manually disable a provider |
-| `POST` | `/api/providers/{name}/enable` | Re-enable a provider (resets failure count) |
-| `GET` | `/api/health` | Health status of all providers |
+| `POST` | `/api/providers/{name}/enable` | Re-enable a provider and reset failure counter |
+| `GET` | `/api/domains?name=<provider>` | List available domains for a provider |
+
+**Response `GET /api/providers`**
+```json
+[
+  { "name": "gmail",      "disabled": false, "failures": 0 },
+  { "name": "mail.tm",    "disabled": false, "failures": 0 },
+  { "name": "mailticking","disabled": true,  "failures": 3 }
+]
+```
+
+---
 
 ### Email
 
+`name` is optional on every endpoint — omitted means "auto" (first healthy provider in priority order).
+
 | Method | Path | Description |
 |---|---|---|
-| `POST` | `/api/email?name=<provider>` | Create a new temporary address |
-| `GET` | `/api/email/{email}/messages?token=X&name=Y` | List messages |
-| `GET` | `/api/email/{email}/message/{id}?token=X&name=Y` | Get full message (with body) |
+| `POST` | `/api/email?name=<provider>` | Create a new temporary mailbox |
+| `GET` | `/api/email/{email}/messages?token=X&name=Y` | List messages for a mailbox |
+| `GET` | `/api/email/{email}/message/{id}?token=X&name=Y` | Get a full message (with body) |
 | `DELETE` | `/api/email/{email}?token=X&name=Y` | Delete the mailbox |
-| `GET` | `/api/domains?name=<provider>` | List available domains |
 
-`name` is optional everywhere — omitted means "auto" (first healthy provider).
+**Request `POST /api/email`**
+```json
+{
+  "min_name_length": 10,
+  "max_name_length": 10,
+  "domain": null
+}
+```
+
+**Response `POST /api/email`**
+```json
+{
+  "email": "randomname@mail.tm",
+  "token": "eyJ...",
+  "provider": "mail.tm"
+}
+```
+
+**Response `GET /api/email/{email}/messages`**
+```json
+[
+  {
+    "id": "abc123",
+    "from_addr": "\"Alice\" <alice@example.com>",
+    "to_addr": "randomname@mail.tm",
+    "subject": "Your verification code",
+    "body_text": null,
+    "body_html": null,
+    "created_at": "1742900000",
+    "attachments": []
+  }
+]
+```
+
+**Response `GET /api/email/{email}/message/{id}`**
+```json
+{
+  "id": "abc123",
+  "from_addr": "\"Alice\" <alice@example.com>",
+  "to_addr": "randomname@mail.tm",
+  "subject": "Your verification code",
+  "body_text": "Your code is 123456",
+  "body_html": "<html>...</html>",
+  "created_at": "1742900000",
+  "attachments": [
+    { "filename": "invoice.pdf", "content_type": "application/pdf", "size": 42300, "url": null }
+  ]
+}
+```
+
+---
+
+### Shared / Pinned emails
+
+Pin a mailbox server-side so every client can see and reuse it.
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/shared` | List all pinned email accounts |
+| `POST` | `/api/shared` | Pin an email (visible to all clients) |
+| `DELETE` | `/api/shared/{email}` | Unpin an email |
+
+**Request `POST /api/shared`**
+```json
+{
+  "email": "randomname@mail.tm",
+  "token": "eyJ...",
+  "provider": "mail.tm",
+  "label": "My shared inbox"
+}
+```
+
+**Response `GET /api/shared`**
+```json
+[
+  {
+    "email": "randomname@mail.tm",
+    "token": "eyJ...",
+    "provider": "mail.tm",
+    "label": "My shared inbox",
+    "pinned_at": 1742900000
+  }
+]
+```
 
 ---
 
