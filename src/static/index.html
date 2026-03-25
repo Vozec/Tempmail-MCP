@@ -4,69 +4,65 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>tempmail</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"
+        crossorigin="anonymous" referrerpolicy="no-referrer" async></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
 :root{
-  --bg:       #080808;
-  --sb:       #0b0b0b;
-  --s1:       #0f0f0f;
-  --s2:       #141414;
-  --b0:       #161616;
-  --b1:       #1e1e1e;
-  --b2:       #2a2a2a;
-  --t1:       #e8e8e8;
-  --t2:       #7a7a7a;
-  --t3:       #3a3a3a;
-  --acc:      #3b82f6;
-  --acc-d:    rgba(59,130,246,.08);
-  --acc-b:    rgba(59,130,246,.25);
-  --ok:       #22c55e;
-  --warn:     #f59e0b;
-  --err:      #ef4444;
-  --mono:     'SF Mono','JetBrains Mono','Fira Code',ui-monospace,monospace;
-  --sans:     ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;
-  --sidebar-w: 272px;
+  --bg:        #080808;
+  --sb:        #0b0b0b;
+  --s1:        #0f0f0f;
+  --s2:        #141414;
+  --b0:        #161616;
+  --b1:        #1e1e1e;
+  --b2:        #2a2a2a;
+  --t1:        #e8e8e8;
+  --t2:        #7a7a7a;
+  --t3:        #3a3a3a;
+  --acc:       #3b82f6;
+  --acc-d:     rgba(59,130,246,.08);
+  --acc-b:     rgba(59,130,246,.25);
+  --ok:        #22c55e;
+  --warn:      #f59e0b;
+  --err:       #ef4444;
+  --mono:      'SF Mono','JetBrains Mono','Fira Code',ui-monospace,monospace;
+  --sans:      ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;
+  --msg-w:     340px;
 }
 
 html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--t1)}
 body{font-family:var(--sans);font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased}
 
-/* ── scrollbar ── */
 ::-webkit-scrollbar{width:3px;height:3px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
 ::-webkit-scrollbar-thumb:hover{background:var(--t3)}
 
 /* ═══════════════════════════════════════════════
-   LAYOUT
+   APP LAYOUT
 ═══════════════════════════════════════════════ */
-.app{display:flex;height:100vh;overflow:hidden}
+.app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
 
 /* ═══════════════════════════════════════════════
-   SIDEBAR
+   TOPBAR
 ═══════════════════════════════════════════════ */
-.sidebar{
-  width:var(--sidebar-w);flex-shrink:0;
-  background:var(--sb);
-  border-right:1px solid var(--b0);
-  display:flex;flex-direction:column;
-  overflow:hidden;
+.topbar{
+  height:48px;display:flex;align-items:center;gap:8px;
+  padding:0 12px;background:var(--sb);
+  border-bottom:1px solid var(--b0);
+  flex-shrink:0;min-width:0;
 }
 
-/* top bar */
-.sb-top{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:14px 16px 13px;
-  border-bottom:1px solid var(--b0);
-  flex-shrink:0;
-}
-.logo{
+.tb-logo{
   font-family:var(--mono);font-size:12px;font-weight:600;
   letter-spacing:-.2px;color:var(--t1);user-select:none;
+  white-space:nowrap;flex-shrink:0;
 }
-.logo-acc{color:var(--acc)}
-.health{display:flex;align-items:center;gap:6px}
+.tb-logo-acc{color:var(--acc)}
+
+/* health dot */
+.health{display:flex;align-items:center;gap:5px;flex-shrink:0}
 .hdot{
   width:5px;height:5px;border-radius:50%;
   background:var(--t3);flex-shrink:0;
@@ -79,25 +75,106 @@ body{font-family:var(--sans);font-size:13px;line-height:1.5;-webkit-font-smoothi
 @keyframes hblink{0%,100%{opacity:.15}50%{opacity:.8}}
 .htext{font-family:var(--mono);font-size:10px;color:var(--t3)}
 
-/* generate bar */
-.gen-bar{
-  display:flex;align-items:center;gap:6px;
-  padding:10px 10px;
-  border-bottom:1px solid var(--b0);
-  flex-shrink:0;
+/* tab bar */
+.tab-bar{
+  display:flex;align-items:center;gap:3px;
+  flex:1;overflow-x:auto;min-width:0;
+  scrollbar-width:none;
 }
-.prov-wrap{position:relative;flex:1;min-width:0}
+.tab-bar::-webkit-scrollbar{display:none}
+
+.tab{
+  display:flex;align-items:center;gap:5px;
+  padding:4px 9px;border-radius:4px;
+  cursor:pointer;white-space:nowrap;flex-shrink:0;
+  font-size:12px;font-family:var(--mono);
+  color:var(--t2);
+  border:1px solid transparent;
+  border-bottom:2px solid transparent;
+  transition:background .1s,color .1s;
+  max-width:200px;min-width:0;
+  user-select:none;
+}
+.tab:hover{background:var(--s1);color:var(--t1)}
+.tab.active{background:var(--acc-d);color:var(--acc);border-bottom-color:var(--acc)}
+.tab.all-tab{font-style:italic;color:var(--t3)}
+.tab.all-tab.active{color:var(--acc)}
+
+.tab-dot{
+  width:5px;height:5px;border-radius:50%;
+  background:var(--t3);flex-shrink:0;transition:background .3s;
+}
+.tab-dot.live{background:var(--ok)}
+
+.tab-label{
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  flex:1;min-width:0;outline:none;
+}
+.tab-label[contenteditable="true"]{
+  background:var(--s2);border-radius:2px;padding:0 3px;
+  color:var(--t1);cursor:text;min-width:40px;
+}
+
+.tab-badge{
+  font-size:9px;font-weight:700;
+  background:var(--acc);color:#fff;
+  border-radius:3px;padding:1px 4px;
+  flex-shrink:0;min-width:14px;text-align:center;
+}
+
+.tab-x{
+  width:14px;height:14px;border:none;background:transparent;
+  color:var(--t3);cursor:pointer;border-radius:2px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;line-height:1;flex-shrink:0;padding:0;
+  transition:color .1s,background .1s;
+}
+.tab-x:hover{color:var(--err);background:rgba(239,68,68,.1)}
+
+/* overflow dropdown */
+.tab-overflow{position:relative;flex-shrink:0}
+.tab-overflow-btn{
+  font-family:var(--mono);font-size:11px;
+  background:var(--s1);border:1px solid var(--b1);
+  border-radius:4px;color:var(--t2);
+  padding:3px 8px;cursor:pointer;white-space:nowrap;
+  transition:background .1s,color .1s;
+}
+.tab-overflow-btn:hover{background:var(--b1);color:var(--t1)}
+.tab-dropdown{
+  position:absolute;top:calc(100% + 4px);right:0;
+  background:var(--s2);border:1px solid var(--b2);
+  border-radius:4px;min-width:200px;z-index:200;
+  box-shadow:0 8px 24px rgba(0,0,0,.6);overflow:hidden;
+}
+.tab-dd-item{
+  display:flex;align-items:center;gap:7px;
+  padding:8px 10px;cursor:pointer;
+  font-family:var(--mono);font-size:11px;color:var(--t2);
+  transition:background .1s;border-bottom:1px solid var(--b0);
+}
+.tab-dd-item:last-child{border-bottom:none}
+.tab-dd-item:hover{background:var(--b1);color:var(--t1)}
+.tab-dd-item.active{color:var(--acc)}
+.tab-dd-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* mobile account select */
+.tb-mobile-sel{display:none}
+
+/* topbar right controls */
+.tb-controls{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.prov-wrap{position:relative;display:flex;gap:4px;align-items:center}
 .prov-wrap::after{
   content:'▾';position:absolute;right:8px;top:50%;transform:translateY(-50%);
   font-size:9px;color:var(--t3);pointer-events:none;
 }
 .prov-sel{
-  width:100%;background:var(--s1);border:1px solid var(--b1);
+  background:var(--s1);border:1px solid var(--b1);
   border-radius:4px;color:var(--t2);
   font-family:var(--mono);font-size:11px;
   padding:5px 22px 5px 8px;cursor:pointer;
   appearance:none;outline:none;
-  transition:border-color .1s;
+  transition:border-color .1s;min-width:60px;max-width:120px;
 }
 .prov-sel:focus{border-color:var(--acc-b)}
 .prov-sel option{background:var(--s2)}
@@ -109,7 +186,6 @@ body{font-family:var(--sans);font-size:13px;line-height:1.5;-webkit-font-smoothi
   padding:5px 12px;cursor:pointer;
   white-space:nowrap;flex-shrink:0;
   transition:background .12s,opacity .12s;
-  position:relative;overflow:hidden;
 }
 .btn-new:hover{background:#2563eb}
 .btn-new:active{background:#1d4ed8}
@@ -122,79 +198,56 @@ body{font-family:var(--sans);font-size:13px;line-height:1.5;-webkit-font-smoothi
 }
 @keyframes rot{to{transform:rotate(360deg)}}
 
-/* section label */
+.ibtn{
+  width:22px;height:22px;border:none;background:transparent;
+  color:var(--t3);cursor:pointer;border-radius:3px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:color .1s,background .1s;
+}
+.ibtn:hover{color:var(--t1);background:var(--s2)}
+.ibtn.on{color:var(--acc)}
+
+/* ═══════════════════════════════════════════════
+   CONTENT AREA
+═══════════════════════════════════════════════ */
+.content{display:flex;flex:1;overflow:hidden;min-height:0;position:relative}
+
+/* ═══════════════════════════════════════════════
+   MSG PANEL
+═══════════════════════════════════════════════ */
+.msg-panel{
+  width:var(--msg-w);flex-shrink:0;
+  background:var(--sb);border-right:1px solid var(--b0);
+  display:flex;flex-direction:column;overflow:hidden;
+  transition:transform .2s ease;
+}
+
+.mp-header{
+  display:flex;align-items:center;gap:4px;
+  padding:8px 10px 6px;border-bottom:1px solid var(--b0);flex-shrink:0;
+}
+.mp-title{
+  font-family:var(--mono);font-size:9px;font-weight:700;
+  letter-spacing:1.8px;text-transform:uppercase;
+  color:var(--t3);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+
+.msg-list{flex:1;overflow-y:auto;padding:4px 6px 8px}
+
+/* section labels */
 .sec{
   font-family:var(--mono);font-size:9px;font-weight:700;
   letter-spacing:1.8px;text-transform:uppercase;
   color:var(--t3);padding:10px 14px 5px;flex-shrink:0;
 }
 
-/* accounts */
-.accs{
-  padding:0 6px 4px;flex-shrink:0;
-  max-height:180px;overflow-y:auto;
-}
-.no-accs{
-  font-size:11px;color:var(--t3);
-  padding:8px 8px 10px;text-align:center;
-}
-.acc-row{
-  display:flex;align-items:center;gap:7px;
-  padding:7px 9px;border-radius:4px;
-  cursor:pointer;border:1px solid transparent;
-  transition:background .1s,border-color .1s;
-  min-width:0;
-}
-.acc-row:hover{background:var(--s1)}
-.acc-row.active{background:var(--acc-d);border-color:var(--acc-b)}
-
-.acc-indicator{
-  width:5px;height:5px;border-radius:50%;
-  background:var(--t3);flex-shrink:0;
-  transition:background .3s;
-}
-.acc-indicator.live{background:var(--ok)}
-
-.acc-email{
-  font-family:var(--mono);font-size:11px;
-  color:var(--t2);flex:1;min-width:0;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-  cursor:copy;
-}
-.acc-email:hover{color:var(--t1)}
-.acc-row.active .acc-email{color:var(--acc)}
-.acc-email.flash{color:var(--ok) !important;transition:color .1s}
-
-.acc-count{
-  font-family:var(--mono);font-size:9px;font-weight:700;
-  background:var(--acc);color:#fff;
-  border-radius:3px;padding:1px 4px;flex-shrink:0;
-  min-width:14px;text-align:center;
-}
-.acc-x{
-  width:16px;height:16px;border:none;background:transparent;
-  color:var(--t3);cursor:pointer;border-radius:3px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:14px;line-height:1;flex-shrink:0;
-  transition:color .1s,background .1s;
-}
-.acc-x:hover{color:var(--err);background:rgba(239,68,68,.08)}
-.acc-focus{
-  width:16px;height:16px;border:none;background:transparent;
-  color:var(--t3);cursor:pointer;border-radius:3px;
-  display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;transition:color .1s,background .1s;
-}
-.acc-focus:hover{color:var(--acc);background:var(--acc-d)}
-
-/* ── Pinned section ── */
-.pin-hdr{color:var(--acc);gap:5px}
+/* pinned */
+.pin-hdr{display:flex;align-items:center;gap:5px;color:var(--acc);flex-shrink:0}
 .pin-list{flex-shrink:0}
 .pin-row{
   display:flex;align-items:center;gap:5px;
-  padding:4px 10px;cursor:pointer;
-  border-bottom:1px solid var(--b0);
-  transition:background .1s;
+  padding:5px 10px;cursor:pointer;
+  border-bottom:1px solid var(--b0);transition:background .1s;
 }
 .pin-row:hover{background:var(--acc-d)}
 .pin-row.in-session{cursor:default;opacity:.5}
@@ -207,53 +260,57 @@ body{font-family:var(--sans);font-size:13px;line-height:1.5;-webkit-font-smoothi
 }
 .pinned-on{color:var(--acc) !important}
 
-/* ── Archive section ── */
-.arch-hdr{
-  display:flex;align-items:center;gap:4px;
-  color:var(--t3);
-}
+/* archive */
+.arch-hdr{display:flex;align-items:center;gap:4px;color:var(--t3);flex-shrink:0}
 .arch-hdr:hover{color:var(--t2)}
 .arch-list{overflow-y:auto;flex-shrink:0;max-height:160px}
+
+.acc-row{
+  display:flex;align-items:center;gap:6px;
+  padding:5px 9px;border-radius:4px;cursor:pointer;
+  border:1px solid transparent;transition:background .1s,border-color .1s;min-width:0;
+}
+.acc-row:hover{background:var(--s1)}
+.acc-row.active{background:var(--acc-d);border-color:var(--acc-b)}
+.acc-indicator{
+  width:5px;height:5px;border-radius:50%;background:var(--t3);
+  flex-shrink:0;transition:background .3s;
+}
+.acc-indicator.live{background:var(--ok)}
+.acc-email{
+  font-family:var(--mono);font-size:11px;color:var(--t2);
+  flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.acc-count{
+  font-family:var(--mono);font-size:9px;font-weight:700;
+  background:var(--acc);color:#fff;
+  border-radius:3px;padding:1px 4px;flex-shrink:0;
+  min-width:14px;text-align:center;
+}
+.acc-x{
+  width:16px;height:16px;border:none;background:transparent;
+  color:var(--t3);cursor:pointer;border-radius:3px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;line-height:1;flex-shrink:0;transition:color .1s,background .1s;
+}
+.acc-x:hover{color:var(--err);background:rgba(239,68,68,.08)}
 .hist-row .acc-email{color:var(--t3);font-size:10px}
-.hist-row:hover .acc-email{color:var(--t2)}
-.hist-row.active .acc-email{color:var(--t2)}
+.hist-row:hover .acc-email,.hist-row.active .acc-email{color:var(--t2)}
 .hist-row .acc-count{background:var(--b2);color:var(--t3)}
-.arch-cnt{font-size:9px}
 
 .msg-acct{
   font-family:var(--mono);font-size:9px;color:var(--t3);
   margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
 
-/* inbox bar */
-.inbox-bar{
-  display:flex;align-items:center;gap:2px;
-  padding:8px 10px 4px;flex-shrink:0;
-  border-top:1px solid var(--b0);margin-top:2px;
-}
-.inbox-bar .sec{padding:0;flex:1}
-.ibtn{
-  width:22px;height:22px;border:none;background:transparent;
-  color:var(--t3);cursor:pointer;border-radius:3px;
-  display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;transition:color .1s,background .1s;
-}
-.ibtn:hover{color:var(--t1);background:var(--s2)}
-.ibtn.on{color:var(--acc)}
-
 /* message list */
-.msg-list{flex:1;overflow-y:auto;padding:0 6px 8px}
-.empty-inbox{
-  padding:28px 12px;text-align:center;
-}
-.empty-art{
-  font-family:var(--mono);font-size:10px;color:var(--t3);
-  opacity:.35;line-height:1.6;margin-bottom:8px;
-}
+.empty-inbox{padding:28px 12px;text-align:center}
+.empty-art{font-family:var(--mono);font-size:10px;color:var(--t3);opacity:.35;line-height:1.6;margin-bottom:8px}
 .empty-hint{font-size:11px;color:var(--t3)}
 
 .msg-row{
-  padding:9px 9px;border-radius:4px;
+  display:flex;align-items:flex-start;gap:4px;
+  padding:8px 8px;border-radius:4px;
   cursor:pointer;border:1px solid transparent;
   margin-bottom:1px;transition:background .1s,border-color .1s;
   animation:slideup .13s ease;
@@ -261,23 +318,24 @@ body{font-family:var(--sans);font-size:13px;line-height:1.5;-webkit-font-smoothi
 @keyframes slideup{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 .msg-row:hover{background:var(--s1)}
 .msg-row.active{background:var(--acc-d);border-color:var(--acc-b)}
-.msg-from{
-  font-size:12px;font-weight:500;color:var(--t1);
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+.msg-row-inner{flex:1;min-width:0}
+.msg-from{font-size:12px;font-weight:500;color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.msg-subj{font-size:11px;color:var(--t2);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.msg-time{font-family:var(--mono);font-size:9px;color:var(--t3);margin-top:3px}
+.msg-dismiss{
+  width:16px;height:16px;border:none;background:transparent;
+  color:transparent;cursor:pointer;border-radius:2px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;line-height:1;flex-shrink:0;padding:0;
+  transition:color .1s,background .1s;align-self:flex-start;margin-top:1px;
 }
-.msg-subj{
-  font-size:11px;color:var(--t2);margin-top:1px;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-}
-.msg-time{
-  font-family:var(--mono);font-size:9px;color:var(--t3);
-  margin-top:3px;
-}
+.msg-row:hover .msg-dismiss{color:var(--t3)}
+.msg-dismiss:hover{color:var(--err) !important;background:rgba(239,68,68,.08)}
 
 /* ═══════════════════════════════════════════════
-   VIEWER
+   VIEW PANEL
 ═══════════════════════════════════════════════ */
-.viewer{
+.view-panel{
   flex:1;overflow:hidden;
   display:flex;flex-direction:column;
   background:var(--bg);
@@ -287,188 +345,220 @@ body{font-family:var(--sans);font-size:13px;line-height:1.5;-webkit-font-smoothi
   flex:1;display:flex;flex-direction:column;
   align-items:center;justify-content:center;gap:10px;
 }
-.v-empty-logo{
-  font-family:var(--mono);font-size:18px;font-weight:600;
-  letter-spacing:-.3px;color:var(--b1);
-}
+.v-empty-logo{font-family:var(--mono);font-size:18px;font-weight:600;letter-spacing:-.3px;color:var(--b1)}
 .v-empty-sub{font-size:12px;color:var(--t3)}
 
-/* email view */
 .email-view{display:flex;flex-direction:column;height:100%;overflow:hidden}
-
-.email-head{
-  padding:20px 28px 16px;
-  border-bottom:1px solid var(--b0);
-  background:var(--sb);flex-shrink:0;
-}
-.email-subject{
-  font-size:15px;font-weight:600;color:var(--t1);
-  line-height:1.35;margin-bottom:14px;
-}
+.email-head{padding:20px 28px 16px;border-bottom:1px solid var(--b0);background:var(--sb);flex-shrink:0}
+.email-subject{font-size:15px;font-weight:600;color:var(--t1);line-height:1.35;margin-bottom:14px}
 .meta-grid{display:flex;flex-direction:column;gap:5px}
 .meta-row{display:flex;align-items:baseline;gap:10px;font-size:12px}
-.meta-k{
-  font-family:var(--mono);font-size:10px;
-  color:var(--t3);width:32px;flex-shrink:0;
-}
-.meta-v{
-  color:var(--t2);
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-  flex:1;min-width:0;
-}
+.meta-k{font-family:var(--mono);font-size:10px;color:var(--t3);width:32px;flex-shrink:0}
+.meta-v{color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
 .head-actions{display:flex;align-items:center;gap:6px;margin-top:14px}
 .pill{
   font-family:var(--mono);font-size:10px;font-weight:500;
   padding:3px 9px;border-radius:100px;
   border:1px solid var(--b2);background:transparent;
-  color:var(--t2);cursor:pointer;transition:all .1s;
-  letter-spacing:.2px;
+  color:var(--t2);cursor:pointer;transition:all .1s;letter-spacing:.2px;
 }
 .pill:hover{color:var(--t1);background:var(--s1)}
 .pill.on{color:var(--acc);border-color:var(--acc-b);background:var(--acc-d)}
 
-.email-body{flex:1;overflow:auto;position:relative}
-.email-iframe{
-  width:100%;border:none;display:block;
-  min-height:200px;background:#fff;
+/* back button (mobile only) */
+.back-btn{
+  display:none;align-items:center;gap:4px;
+  font-family:var(--mono);font-size:11px;color:var(--acc);
+  cursor:pointer;padding:3px 6px;border-radius:4px;
+  border:none;background:transparent;
+  transition:background .1s;
 }
+.back-btn:hover{background:var(--acc-d)}
+
+.email-body{flex:1;overflow:auto;position:relative}
+.email-iframe{width:100%;border:none;display:block;min-height:200px;background:#fff}
 .email-iframe.dark{filter:invert(1) hue-rotate(180deg)}
 .email-text{
-  padding:24px 28px;
-  font-family:var(--mono);font-size:12px;
+  padding:24px 28px;font-family:var(--mono);font-size:12px;
   color:var(--t2);white-space:pre-wrap;line-height:1.75;
 }
-.email-none{
-  padding:24px 28px;font-size:12px;color:var(--t3);
+.email-none{padding:24px 28px;font-size:12px;color:var(--t3)}
+.email-loading{display:flex;align-items:center;justify-content:center;height:100%;gap:8px;font-size:12px;color:var(--t3)}
+.spin-ring{width:14px;height:14px;border:1.5px solid var(--b2);border-top-color:var(--t3);border-radius:50%;animation:rot .6s linear infinite;flex-shrink:0}
+
+/* attachments */
+.attach-section{padding:12px 28px 20px;border-top:1px solid var(--b0);flex-shrink:0}
+.attach-title{
+  font-family:var(--mono);font-size:9px;font-weight:700;
+  letter-spacing:1.5px;text-transform:uppercase;color:var(--t3);margin-bottom:8px;
 }
-.email-loading{
-  display:flex;align-items:center;justify-content:center;
-  height:100%;gap:8px;font-size:12px;color:var(--t3);
+.attach-row{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 10px;border-radius:4px;
+  background:var(--s1);border:1px solid var(--b1);margin-bottom:4px;
 }
-.spin-ring{
-  width:14px;height:14px;
-  border:1.5px solid var(--b2);border-top-color:var(--t3);
-  border-radius:50%;animation:rot .6s linear infinite;flex-shrink:0;
+.attach-icon{color:var(--t3);flex-shrink:0;font-size:13px}
+.attach-name{font-family:var(--mono);font-size:11px;color:var(--t1);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.attach-size{font-family:var(--mono);font-size:10px;color:var(--t3);flex-shrink:0}
+.attach-dl{
+  font-family:var(--mono);font-size:10px;padding:3px 9px;
+  border-radius:3px;background:var(--s2);border:1px solid var(--b2);
+  color:var(--t2);cursor:pointer;text-decoration:none;flex-shrink:0;
+  transition:background .1s,color .1s;
 }
+.attach-dl:hover{background:var(--b1);color:var(--t1)}
 
 /* ═══════════════════════════════════════════════
    TOASTS
 ═══════════════════════════════════════════════ */
-.toasts{
-  position:fixed;bottom:16px;right:16px;
-  display:flex;flex-direction:column;gap:5px;z-index:9999;
-}
+.toasts{position:fixed;bottom:16px;right:16px;display:flex;flex-direction:column;gap:5px;z-index:9999}
 .toast{
-  font-family:var(--mono);font-size:11px;
-  padding:8px 12px;border-radius:4px;
+  font-family:var(--mono);font-size:11px;padding:8px 12px;border-radius:4px;
   background:var(--s2);border:1px solid var(--b2);
-  color:var(--t1);max-width:240px;
-  box-shadow:0 8px 24px rgba(0,0,0,.6);
-  animation:tin .15s ease;
+  color:var(--t1);max-width:260px;
+  box-shadow:0 8px 24px rgba(0,0,0,.6);animation:tin .15s ease;
 }
 .toast.ok{border-color:rgba(34,197,94,.25);color:var(--ok)}
 .toast.err{border-color:rgba(239,68,68,.25);color:var(--err)}
+.toast.warn{border-color:rgba(245,158,11,.25);color:var(--warn)}
 .toast.out{animation:tout .15s ease forwards}
 @keyframes tin{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 @keyframes tout{to{opacity:0;transform:translateY(5px)}}
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════ */
+@media (max-width:900px){
+  :root{--msg-w:280px}
+}
+@media (max-width:600px){
+  :root{--msg-w:100%}
+  .tab-bar{display:none}
+  .tab-overflow{display:none !important}
+  .tb-mobile-sel{display:block !important;flex:1;min-width:0;max-width:160px}
+  .prov-wrap::after{display:none}
+  .prov-sel{max-width:80px}
+  .content{position:relative}
+  .msg-panel{
+    position:absolute;top:0;left:0;right:0;bottom:0;
+    width:100%;z-index:10;
+  }
+  .msg-panel.hidden{transform:translateX(-100%)}
+  .view-panel{
+    position:absolute;top:0;left:0;right:0;bottom:0;
+    width:100%;z-index:5;
+  }
+  .view-panel.hidden{display:none}
+  .back-btn{display:flex !important}
+}
 </style>
 </head>
 <body>
 <div class="app">
 
-  <!-- ════════════════ SIDEBAR ════════════════ -->
-  <aside class="sidebar">
-
-    <!-- top: logo + health -->
-    <div class="sb-top">
-      <div class="logo">[tempmail<span class="logo-acc">·</span>]</div>
-      <div class="health">
-        <div class="hdot checking" id="hdot"></div>
-        <span class="htext" id="htxt">—</span>
-      </div>
+  <!-- ════════════════ TOPBAR ════════════════ -->
+  <div class="topbar">
+    <div class="tb-logo">[tempmail<span class="tb-logo-acc">·</span>]</div>
+    <div class="health">
+      <div class="hdot checking" id="hdot"></div>
+      <span class="htext" id="htxt">—</span>
     </div>
 
-    <!-- generate bar -->
-    <div class="gen-bar">
-      <div class="prov-wrap" style="display:flex;gap:4px;align-items:center;flex:1;min-width:0">
-        <select class="prov-sel" id="provSel" style="flex:1;min-width:0"><option value="">auto</option></select>
+    <!-- desktop tab bar -->
+    <div class="tab-bar" id="tabBar"></div>
+
+    <!-- mobile account select -->
+    <select class="tb-mobile-sel prov-sel" id="mobileAccSel"></select>
+
+    <!-- overflow dropdown -->
+    <div class="tab-overflow" id="tabOverflow" style="display:none">
+      <button class="tab-overflow-btn" id="tabOverflowBtn" onclick="toggleOverflow()">+0 ▾</button>
+      <div class="tab-dropdown" id="tabDropdown" style="display:none"></div>
+    </div>
+
+    <!-- provider + new button -->
+    <div class="tb-controls">
+      <div class="prov-wrap">
+        <select class="prov-sel" id="provSel"><option value="">auto</option></select>
         <button class="ibtn" id="provToggleBtn" title="Toggle provider" onclick="onProvToggle()" style="display:none;flex-shrink:0">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
         </button>
       </div>
       <button class="btn-new" id="genBtn" onclick="generate()">+ New</button>
     </div>
+  </div>
 
-    <!-- mailboxes -->
-    <div class="sec">Mailboxes</div>
-    <div class="accs" id="accs">
-      <div class="no-accs" id="noAccs">No active mailboxes</div>
+  <!-- ════════════════ CONTENT ════════════════ -->
+  <div class="content">
+
+    <!-- ════ MSG PANEL ════ -->
+    <div class="msg-panel" id="msgPanel">
+
+      <div class="mp-header" id="mpHeader" style="display:none">
+        <div class="mp-title" id="mpTitle">Inbox</div>
+        <button class="ibtn" id="rfBtn" onclick="refresh()" title="Refresh">
+          <svg id="rfIcon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="23 4 23 10 17 10"/>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+          </svg>
+        </button>
+        <button class="ibtn" id="autoBtn" onclick="toggleAuto()" title="Auto-refresh">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="msg-list" id="msgList"></div>
+
+      <div class="sec pin-hdr" id="pinHdr" style="display:none">
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1l-1.5 1.5L16 4l-4 4-3-1-5 5 3 3-3 3h4l2-2 3 3 5-5-1-3 4-4 1.5 1.5L22 8z"/></svg>
+        Pinned
+      </div>
+      <div class="pin-list" id="pinList"></div>
+
+      <div class="sec arch-hdr" id="archHdr" onclick="toggleArchive()" style="display:none;cursor:pointer;user-select:none">
+        Archive
+        <svg id="archChev" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left:auto;transition:transform .15s"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="arch-list" id="archList" style="display:none"></div>
+
     </div>
 
-    <!-- pinned / shared -->
-    <div class="sec pin-hdr" id="pinHdr" style="display:none">
-      <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1l-1.5 1.5L16 4l-4 4-3-1-5 5 3 3-3 3h4l2-2 3 3 5-5-1-3 4-4 1.5 1.5L22 8z"/></svg>
-      Pinned
-    </div>
-    <div class="pin-list" id="pinList"></div>
+    <!-- ════ VIEW PANEL ════ -->
+    <main class="view-panel" id="viewer">
+      <div class="v-empty">
+        <div class="v-empty-logo">[tempmail·]</div>
+        <div class="v-empty-sub">Generate a mailbox to get started</div>
+      </div>
+    </main>
 
-    <!-- archive (history) -->
-    <div class="sec arch-hdr" id="archHdr" onclick="toggleArchive()" style="display:none;cursor:pointer;user-select:none">
-      Archive
-      <svg id="archChev" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left:auto;transition:transform .15s"><polyline points="6 9 12 15 18 9"/></svg>
-    </div>
-    <div class="arch-list" id="archList" style="display:none"></div>
-
-    <!-- inbox bar (hidden until account active) -->
-    <div class="inbox-bar" id="inboxBar" style="display:none">
-      <div class="sec">Inbox</div>
-      <button class="ibtn" id="rfBtn" onclick="refresh()" title="Refresh">
-        <svg id="rfIcon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <polyline points="23 4 23 10 17 10"/>
-          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-        </svg>
-      </button>
-      <button class="ibtn" id="autoBtn" onclick="toggleAuto()" title="Auto-refresh">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <circle cx="12" cy="12" r="10"/>
-          <polyline points="12 6 12 12 16 14"/>
-        </svg>
-      </button>
-    </div>
-
-    <!-- message list -->
-    <div class="msg-list" id="msgList"></div>
-
-  </aside>
-
-  <!-- ════════════════ VIEWER ════════════════ -->
-  <main class="viewer" id="viewer">
-    <div class="v-empty">
-      <div class="v-empty-logo">[tempmail·]</div>
-      <div class="v-empty-sub">Generate a mailbox to get started</div>
-    </div>
-  </main>
-
+  </div>
 </div>
 <div class="toasts" id="toasts"></div>
 
 <script>
 const API = '/api';
+const TAB_MAX = 5;
 
 /* ── State ─────────────────────────────────────────────────────────────── */
 const S = {
   provider:        '',
   accounts:        [],   // [{email, token, provider, msgs:[]}]
   history:         [],   // [{email, token, provider, archivedAt, msgs:[]}]
-  activeIdx:       -1,
-  historyIdx:      -1,   // >= 0 when viewing an archived account
+  activeIdx:       -1,   // -1 = all accounts
+  historyIdx:      -1,   // >= 0 when viewing archived account
   selectedMsgId:   null,
   autoOn:          false,
   autoTimer:       null,
   darkEmail:       false,
   busy:            false,
   _providerStatus: [],
-  _pinned: [],         // [{email, token, provider, label, pinned_at}] — from server
+  _pinned:         [],
+  _labels:         {},   // {email: displayLabel}
+  _dismissed:      {},   // {email: [msgId, ...]}
+  _seenIds:        {},   // {email: Set<id>} — in-memory only
+  _mobileView:     'list',
 };
 
 /* ── Persistence ───────────────────────────────────────────────────────── */
@@ -484,42 +574,34 @@ function save() {
 function saveHistory() {
   try {
     localStorage.setItem('tm_history', JSON.stringify(
-      S.history.slice(0, 100).map(h => ({
-        email: h.email, token: h.token, provider: h.provider,
-        archivedAt: h.archivedAt,
-        msgs: (h.msgs||[]).map(m => ({
-          id:m.id, from_addr:m.from_addr, to_addr:m.to_addr,
-          subject:m.subject, created_at:m.created_at
-        }))
+      S.history.slice(0,100).map(h => ({
+        email:h.email, token:h.token, provider:h.provider,
+        archivedAt:h.archivedAt,
+        msgs:(h.msgs||[]).map(m => ({id:m.id,from_addr:m.from_addr,to_addr:m.to_addr,subject:m.subject,created_at:m.created_at}))
       }))
     ));
   } catch {}
 }
 
+function saveLabels()    { try { localStorage.setItem('tm_labels',    JSON.stringify(S._labels));    } catch {} }
+function saveDismissed() { try { localStorage.setItem('tm_dismissed', JSON.stringify(S._dismissed)); } catch {} }
+
 function saveMsgs(email, msgs) {
   try {
     localStorage.setItem('tm_msgs_' + email, JSON.stringify(
-      msgs.map(m => ({id:m.id, from_addr:m.from_addr, to_addr:m.to_addr,
-                      subject:m.subject, created_at:m.created_at}))
+      msgs.map(m => ({id:m.id,from_addr:m.from_addr,to_addr:m.to_addr,subject:m.subject,created_at:m.created_at}))
     ));
   } catch {}
 }
-
 function loadMsgs(email) {
-  try { return JSON.parse(localStorage.getItem('tm_msgs_' + email) || '[]'); }
-  catch { return []; }
+  try { return JSON.parse(localStorage.getItem('tm_msgs_' + email) || '[]'); } catch { return []; }
 }
-
 function saveBodies(email, map) {
-  try { localStorage.setItem('tm_bodies_' + email, JSON.stringify(map)); }
-  catch {}
+  try { localStorage.setItem('tm_bodies_' + email, JSON.stringify(map)); } catch {}
 }
-
 function loadBodies(email) {
-  try { return JSON.parse(localStorage.getItem('tm_bodies_' + email) || '{}'); }
-  catch { return {}; }
+  try { return JSON.parse(localStorage.getItem('tm_bodies_' + email) || '{}'); } catch { return {}; }
 }
-
 function cleanupMsgStorage(email) {
   localStorage.removeItem('tm_msgs_' + email);
   localStorage.removeItem('tm_bodies_' + email);
@@ -534,13 +616,23 @@ function restore() {
         .filter(a => a.email && _EMAIL_RE.test(a.email.trim()))
         .map(a => ({...a, msgs: loadMsgs(a.email)}));
       const i = parseInt(localStorage.getItem('tm_activeIdx') || '-1');
-      S.activeIdx = (S.accounts.length > 0) ? Math.max(-1, Math.min(i, S.accounts.length-1)) : -1;
+      S.activeIdx = S.accounts.length > 0 ? Math.max(-1, Math.min(i, S.accounts.length-1)) : -1;
     }
-    try {
-      S.history = JSON.parse(localStorage.getItem('tm_history') || '[]');
-    } catch { S.history = []; }
+    try { S.history    = JSON.parse(localStorage.getItem('tm_history')   || '[]'); } catch { S.history = []; }
+    try { S._labels    = JSON.parse(localStorage.getItem('tm_labels')    || '{}'); } catch {}
+    try { S._dismissed = JSON.parse(localStorage.getItem('tm_dismissed') || '{}'); } catch {}
     save();
   } catch {}
+}
+
+/* ── Labels ────────────────────────────────────────────────────────────── */
+function getLabel(email) {
+  const l = S._labels[email];
+  return (l && l.trim()) ? l.trim() : email;
+}
+function setLabel(email, label) {
+  S._labels[email] = label.trim() || email;
+  saveLabels();
 }
 
 /* ── Health ────────────────────────────────────────────────────────────── */
@@ -560,32 +652,24 @@ async function checkHealth() {
 async function loadProviders() {
   try {
     const list = await fetch(`${API}/providers`).then(r => r.json());
-    S._providerStatus = list; // cache for toggle
+    S._providerStatus = list;
     const sel = $('provSel');
-    // remove old options (keep "auto")
     while (sel.options.length > 1) sel.remove(1);
     list.forEach(p => {
       const o = document.createElement('option');
       o.value = p.name;
-      o.textContent = p.disabled
-        ? `${p.name} ✕`
-        : p.failures > 0 ? `${p.name} (${p.failures}×)` : p.name;
+      o.textContent = p.disabled ? `${p.name} ✕` : p.failures > 0 ? `${p.name} (${p.failures}×)` : p.name;
       if (p.disabled) o.style.color = 'var(--t3)';
       sel.appendChild(o);
     });
-    sel.onchange = () => {
-      S.provider = sel.value;
-      updateProvToggleBtn();
-    };
+    sel.onchange = () => { S.provider = sel.value; updateProvToggleBtn(); };
     updateProvToggleBtn();
   } catch {}
 }
 
 function updateProvToggleBtn() {
-  const sel = $('provSel');
-  const btn = $('provToggleBtn');
-  const name = sel.value;
-  if (!name || !S._providerStatus) { btn.style.display = 'none'; return; }
+  const sel = $('provSel'), btn = $('provToggleBtn'), name = sel.value;
+  if (!name || !S._providerStatus.length) { btn.style.display = 'none'; return; }
   const info = S._providerStatus.find(p => p.name === name);
   if (!info) { btn.style.display = 'none'; return; }
   btn.style.display = '';
@@ -594,58 +678,47 @@ function updateProvToggleBtn() {
 }
 
 async function onProvToggle() {
-  const sel = $('provSel');
-  const name = sel.value;
-  if (!name || !S._providerStatus) return;
+  const name = $('provSel').value;
+  if (!name) return;
   const info = S._providerStatus.find(p => p.name === name);
   if (!info) return;
   await toggleProvider(name, !info.disabled);
   updateProvToggleBtn();
 }
 
-/* ── Shared / Pinned emails ─────────────────────────────────────────────── */
+async function toggleProvider(name, disable) {
+  try {
+    await fetch(`${API}/providers/${enc(name)}/${disable?'disable':'enable'}`, {method:'POST'});
+    await loadProviders();
+    toast(`${name} ${disable?'disabled':'enabled'}`, disable?'warn':'ok');
+  } catch { toast('Failed', 'err'); }
+}
+
+/* ── Shared / Pinned ───────────────────────────────────────────────────── */
 async function loadPinned() {
   try {
     S._pinned = await fetch(`${API}/shared`).then(r => r.json());
     renderPinned();
-    renderAccounts(); // refresh pin icons
+    renderTabs();
   } catch {}
 }
 
 function renderPinned() {
-  const hdr  = $('pinHdr');
-  const list = $('pinList');
-  if (!S._pinned.length) {
-    hdr.style.display  = 'none';
-    list.innerHTML = '';
-    return;
-  }
+  const hdr = $('pinHdr'), list = $('pinList');
+  if (!S._pinned.length) { hdr.style.display = 'none'; list.innerHTML = ''; return; }
   hdr.style.display = '';
   list.innerHTML = '';
   S._pinned.forEach(p => {
     const inSession = S.accounts.some(a => a.email === p.email);
     const row = el('div', 'pin-row' + (inSession ? ' in-session' : ''));
     row.title = inSession ? 'Already in your session' : 'Click to add to your session';
-
     const icon = el('span', 'pin-icon');
     icon.innerHTML = `<svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1l-1.5 1.5L16 4l-4 4-3-1-5 5 3 3-3 3h4l2-2 3 3 5-5-1-3 4-4 1.5 1.5L22 8z"/></svg>`;
-
-    const addr = el('div', 'acc-email');
-    addr.textContent = p.label || p.email;
-    addr.title = p.email;
-
-    const prov = el('span', 'pin-prov');
-    prov.textContent = p.provider;
-
-    const unpin = el('button', 'acc-x');
-    unpin.textContent = '×';
-    unpin.title = 'Unpin';
-    unpin.onclick = e => { e.stopPropagation(); unpinEmail(p.email); };
-
-    row.appendChild(icon);
-    row.appendChild(addr);
-    row.appendChild(prov);
-    row.appendChild(unpin);
+    const addr = el('div', 'acc-email'); addr.textContent = getLabel(p.label || p.email); addr.title = p.email;
+    const prov = el('span', 'pin-prov'); prov.textContent = p.provider;
+    const xBtn = el('button', 'acc-x'); xBtn.textContent = '×'; xBtn.title = 'Unpin';
+    xBtn.onclick = e => { e.stopPropagation(); unpinEmail(p.email); };
+    row.appendChild(icon); row.appendChild(addr); row.appendChild(prov); row.appendChild(xBtn);
     if (!inSession) row.onclick = () => addSharedToSession(p);
     list.appendChild(row);
   });
@@ -656,14 +729,10 @@ async function pinEmail(acctIdx) {
   if (!acct) return;
   try {
     const r = await fetch(`${API}/shared`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({email: acct.email, token: acct.token, provider: acct.provider}),
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email:acct.email, token:acct.token, provider:acct.provider}),
     });
-    if (!r.ok) {
-      const e = await r.json().catch(() => ({}));
-      throw new Error(e.detail || `HTTP ${r.status}`);
-    }
+    if (!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(e.detail||`HTTP ${r.status}`); }
     await loadPinned();
     toast('Pinned — visible to everyone', 'ok');
   } catch(e) { toast(e.message, 'err'); }
@@ -671,35 +740,171 @@ async function pinEmail(acctIdx) {
 
 async function unpinEmail(email) {
   try {
-    await fetch(`${API}/shared/${enc(email)}`, {method: 'DELETE'});
+    await fetch(`${API}/shared/${enc(email)}`, {method:'DELETE'});
     await loadPinned();
     toast('Unpinned', 'warn');
   } catch { toast('Failed', 'err'); }
 }
 
 function addSharedToSession(p) {
-  if (S.accounts.some(a => a.email === p.email)) {
-    toast('Already in session', 'warn');
-    return;
-  }
-  const msgs = loadMsgs(p.email);
-  S.accounts.push({email: p.email, token: p.token, provider: p.provider, msgs});
+  if (S.accounts.some(a => a.email === p.email)) { toast('Already in session', 'warn'); return; }
+  S.accounts.push({email:p.email, token:p.token, provider:p.provider, msgs:loadMsgs(p.email)});
   S.activeIdx = S.accounts.length - 1;
-  S.historyIdx = -1;
-  S.selectedMsgId = null;
-  save();
-  renderAll();
-  toast('Added to session', 'ok');
+  S.historyIdx = -1; S.selectedMsgId = null;
+  save(); renderAll(); toast('Added to session', 'ok');
   refreshAccount(S.activeIdx);
 }
 
-async function toggleProvider(name, disable) {
-  const action = disable ? 'disable' : 'enable';
-  try {
-    await fetch(`${API}/providers/${encodeURIComponent(name)}/${action}`, {method:'POST'});
-    await loadProviders();
-    toast(`${name} ${disable ? 'disabled' : 'enabled'}`, disable ? 'warn' : 'ok');
-  } catch { toast('Failed', 'err'); }
+/* ── Tabs ──────────────────────────────────────────────────────────────── */
+function renderTabs() {
+  const bar       = $('tabBar');
+  const ovWrap    = $('tabOverflow');
+  const ovBtn     = $('tabOverflowBtn');
+  const dropdown  = $('tabDropdown');
+  const mSel      = $('mobileAccSel');
+
+  bar.innerHTML = '';
+  dropdown.innerHTML = '';
+  mSel.innerHTML = '';
+
+  // "All" tab
+  if (S.accounts.length) {
+    const isAll = S.activeIdx === -1 && S.historyIdx === -1;
+    const allTab = el('div', 'tab all-tab' + (isAll ? ' active' : ''));
+    const dot = el('div', 'tab-dot' + (S.accounts.some(a => a.msgs.length) ? ' live' : ''));
+    const lbl = el('span', 'tab-label'); lbl.textContent = 'All';
+    allTab.appendChild(dot); allTab.appendChild(lbl);
+    const total = S.accounts.reduce((s,a) => {
+      const dis = S._dismissed[a.email] || [];
+      return s + a.msgs.filter(m => !dis.includes(m.id)).length;
+    }, 0);
+    if (total) { const b = el('span','tab-badge'); b.textContent = total; allTab.appendChild(b); }
+    allTab.onclick = () => { S.activeIdx=-1; S.historyIdx=-1; S.selectedMsgId=null; save(); renderAll(); };
+    bar.appendChild(allTab);
+    const mo = document.createElement('option'); mo.value='all'; mo.textContent='All accounts';
+    if (isAll) mo.selected = true;
+    mSel.appendChild(mo);
+  }
+
+  const visible  = S.accounts.slice(0, TAB_MAX);
+  const overflow = S.accounts.slice(TAB_MAX);
+
+  visible.forEach((acct, i) => _buildTab(bar, acct, i, mSel));
+
+  if (overflow.length) {
+    ovWrap.style.display = '';
+    ovBtn.textContent = `+${overflow.length} ▾`;
+    overflow.forEach((acct, j) => {
+      const realIdx = TAB_MAX + j;
+      const item = el('div', 'tab-dd-item' + (realIdx === S.activeIdx ? ' active' : ''));
+      const dot  = el('div', 'tab-dot' + (acct.msgs.length ? ' live' : ''));
+      const lbl  = el('span', 'tab-dd-label'); lbl.textContent = getLabel(acct.email); lbl.title = acct.email;
+      const xBtn = el('button', 'acc-x'); xBtn.textContent = '×'; xBtn.title = 'Delete';
+      xBtn.onclick = e => { e.stopPropagation(); dropdown.style.display='none'; deleteAccount(realIdx, e); };
+      item.appendChild(dot); item.appendChild(lbl); item.appendChild(xBtn);
+      item.onclick = () => { dropdown.style.display='none'; selectAccount(realIdx); };
+      dropdown.appendChild(item);
+      const mo = document.createElement('option'); mo.value = String(realIdx);
+      mo.textContent = getLabel(acct.email);
+      if (realIdx === S.activeIdx) mo.selected = true;
+      mSel.appendChild(mo);
+    });
+  } else {
+    ovWrap.style.display = 'none';
+    dropdown.style.display = 'none';
+  }
+
+  // Mobile select sync
+  if (S.activeIdx === -1 && S.accounts.length) mSel.value = 'all';
+  else if (S.activeIdx >= 0) mSel.value = String(S.activeIdx);
+  mSel.onchange = () => {
+    const v = mSel.value;
+    if (v === 'all') { S.activeIdx=-1; S.historyIdx=-1; S.selectedMsgId=null; save(); renderAll(); }
+    else selectAccount(parseInt(v));
+  };
+
+  updateMpTitle();
+}
+
+function _buildTab(bar, acct, i, mSel) {
+  const isActive = i === S.activeIdx && S.historyIdx === -1;
+  const tab = el('div', 'tab' + (isActive ? ' active' : ''));
+  const dot = el('div', 'tab-dot' + (acct.msgs.length ? ' live' : ''));
+  const lbl = el('span', 'tab-label');
+  lbl.textContent = getLabel(acct.email);
+  lbl.title = acct.email;
+  lbl.ondblclick = e => { e.stopPropagation(); startLabelEdit(acct.email, lbl); };
+
+  const dismissed = S._dismissed[acct.email] || [];
+  const visCount  = acct.msgs.filter(m => !dismissed.includes(m.id)).length;
+
+  tab.appendChild(dot); tab.appendChild(lbl);
+  if (visCount) { const b = el('span','tab-badge'); b.textContent = visCount; tab.appendChild(b); }
+
+  const xBtn = el('button', 'tab-x'); xBtn.textContent = '×'; xBtn.title = 'Delete account';
+  xBtn.onclick = e => deleteAccount(i, e);
+  tab.appendChild(xBtn);
+  tab.onclick = () => selectAccount(i);
+  bar.appendChild(tab);
+
+  const mo = document.createElement('option'); mo.value = String(i);
+  mo.textContent = getLabel(acct.email);
+  if (isActive) mo.selected = true;
+  mSel.appendChild(mo);
+}
+
+function toggleOverflow() {
+  const d = $('tabDropdown');
+  d.style.display = d.style.display === 'none' ? '' : 'none';
+}
+
+document.addEventListener('click', e => {
+  const ow = $('tabOverflow');
+  if (ow && !ow.contains(e.target)) {
+    const d = $('tabDropdown');
+    if (d) d.style.display = 'none';
+  }
+});
+
+function updateMpTitle() {
+  const hdr = $('mpHeader'), title = $('mpTitle');
+  if (!hdr || !title) return;
+  const hasContent = S.accounts.length > 0 || S.historyIdx >= 0;
+  hdr.style.display = hasContent ? 'flex' : 'none';
+  if (S.historyIdx >= 0) {
+    const h = S.history[S.historyIdx];
+    title.textContent = h ? getLabel(h.email) : 'Archive';
+  } else if (S.activeIdx === -1 && S.accounts.length) {
+    title.textContent = 'All';
+  } else if (S.activeIdx >= 0) {
+    const acct = S.accounts[S.activeIdx];
+    title.textContent = acct ? getLabel(acct.email) : 'Inbox';
+  } else {
+    title.textContent = 'Inbox';
+  }
+}
+
+/* ── Label edit ────────────────────────────────────────────────────────── */
+function startLabelEdit(email, lblEl) {
+  lblEl.contentEditable = 'true';
+  lblEl.focus();
+  const range = document.createRange();
+  range.selectNodeContents(lblEl);
+  const sel = window.getSelection();
+  sel.removeAllRanges(); sel.addRange(range);
+
+  function commit() {
+    lblEl.contentEditable = 'false';
+    setLabel(email, lblEl.textContent.trim() || email);
+    lblEl.textContent = getLabel(email);
+    renderTabs(); updateMpTitle();
+  }
+  lblEl.onblur = commit;
+  lblEl.onkeydown = e => {
+    if (e.key === 'Enter') { e.preventDefault(); lblEl.blur(); }
+    if (e.key === 'Escape') { lblEl.contentEditable = 'false'; lblEl.textContent = getLabel(email); }
+    e.stopPropagation();
+  };
 }
 
 /* ── Generate ──────────────────────────────────────────────────────────── */
@@ -711,47 +916,34 @@ async function generate() {
   btn.innerHTML = '<span class="spin-dot"></span>…';
   try {
     const url = S.provider ? `${API}/email?name=${enc(S.provider)}` : `${API}/email`;
-    const r = await fetch(url, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: '{}',
-    });
+    const r = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'});
     if (!r.ok) {
-      const e = await r.json().catch(() => ({}));
+      const e = await r.json().catch(()=>({}));
       throw new Error(e.detail?.message || e.detail || `HTTP ${r.status}`);
     }
     const acct = await r.json();
     S.accounts.push({...acct, msgs:[]});
     S.activeIdx = S.accounts.length - 1;
-    S.selectedMsgId = null;
-    save();
-    renderAll();
-    toast('Mailbox created', 'ok');
+    S.historyIdx = -1; S.selectedMsgId = null;
+    save(); renderAll(); toast('Mailbox created', 'ok');
     await refreshAccount(S.activeIdx);
   } catch(e) {
     toast(e.message, 'err');
   } finally {
-    S.busy = false;
-    btn.disabled = false;
-    btn.textContent = '+ New';
+    S.busy = false; btn.disabled = false; btn.textContent = '+ New';
   }
 }
 
 /* ── Account actions ───────────────────────────────────────────────────── */
 function selectAccount(idx) {
   if (S.activeIdx === idx && S.historyIdx === -1) return;
-  S.activeIdx = idx;
-  S.historyIdx = -1;
-  S.selectedMsgId = null;
-  save();
-  renderAll();
+  S.activeIdx = idx; S.historyIdx = -1; S.selectedMsgId = null;
+  save(); renderAll();
 }
 
 function selectHistory(idx) {
   if (S.historyIdx === idx) return;
-  S.historyIdx = idx;
-  S.activeIdx = -1;
-  S.selectedMsgId = null;
+  S.historyIdx = idx; S.activeIdx = -1; S.selectedMsgId = null;
   renderAll();
 }
 
@@ -760,27 +952,16 @@ async function deleteAccount(idx, e) {
   const acct = S.accounts[idx];
   if (!acct) return;
   try {
-    await fetch(
-      `${API}/email/${enc(acct.email)}?token=${enc(acct.token)}&name=${enc(acct.provider)}`,
-      {method: 'DELETE'}
-    );
+    await fetch(`${API}/email/${enc(acct.email)}?token=${enc(acct.token)}&name=${enc(acct.provider)}`, {method:'DELETE'});
   } catch {}
-  // Archive before removing
   const msgs = acct.msgs.length ? acct.msgs : loadMsgs(acct.email);
-  S.history.unshift({
-    email: acct.email, token: acct.token, provider: acct.provider,
-    archivedAt: Date.now(), msgs,
-  });
+  S.history.unshift({email:acct.email, token:acct.token, provider:acct.provider, archivedAt:Date.now(), msgs});
   if (S.history.length > 100) S.history.pop();
   saveHistory();
-
   S.accounts.splice(idx, 1);
   if (S.activeIdx >= S.accounts.length) S.activeIdx = S.accounts.length - 1;
-  S.historyIdx = -1;
-  S.selectedMsgId = null;
-  save();
-  renderAll();
-  toast('Mailbox archived');
+  S.historyIdx = -1; S.selectedMsgId = null;
+  save(); renderAll(); toast('Mailbox archived');
 }
 
 function removeHistory(idx, e) {
@@ -791,9 +972,19 @@ function removeHistory(idx, e) {
   S.history.splice(idx, 1);
   if (S.historyIdx === idx) { S.historyIdx = -1; S.selectedMsgId = null; }
   else if (S.historyIdx > idx) S.historyIdx--;
-  saveHistory();
-  renderAll();
-  toast('Removed from archive');
+  saveHistory(); renderAll(); toast('Removed from archive');
+}
+
+/* ── Dismiss message ───────────────────────────────────────────────────── */
+function dismissMsg(msgId, email, e) {
+  e.stopPropagation();
+  if (!S._dismissed[email]) S._dismissed[email] = [];
+  if (!S._dismissed[email].includes(msgId)) {
+    S._dismissed[email].push(msgId);
+    saveDismissed();
+  }
+  if (S.selectedMsgId === msgId) { S.selectedMsgId = null; renderViewer(); }
+  renderMsgList(); renderTabs();
 }
 
 /* ── Refresh ───────────────────────────────────────────────────────────── */
@@ -801,20 +992,26 @@ async function refreshAccount(idx) {
   const acct = S.accounts[idx];
   if (!acct) return;
   try {
-    const r = await fetch(
-      `${API}/email/${enc(acct.email)}/messages?token=${enc(acct.token)}&name=${enc(acct.provider)}`
-    );
+    const r = await fetch(`${API}/email/${enc(acct.email)}/messages?token=${enc(acct.token)}&name=${enc(acct.provider)}`);
     if (!r.ok) return;
     const msgs = await r.json();
-    const prev = acct.msgs.length;
+
+    // Notification dedup
+    if (!S._seenIds[acct.email]) {
+      S._seenIds[acct.email] = new Set(msgs.map(m => m.id));
+    } else {
+      const newMsgs = msgs.filter(m => !S._seenIds[acct.email].has(m.id));
+      if (newMsgs.length) {
+        requestNotifPermission();
+        newMsgs.forEach(m => { S._seenIds[acct.email].add(m.id); showNotif(m, idx); });
+        toast(`+${newMsgs.length} new message${newMsgs.length > 1 ? 's' : ''}`, 'ok');
+      }
+    }
+
     acct.msgs = msgs;
     saveMsgs(acct.email, msgs);
-    renderAccounts();
+    renderTabs();
     if (idx === S.activeIdx && S.historyIdx === -1) renderMsgList();
-    if (msgs.length > prev && idx === S.activeIdx && prev >= 0) {
-      const n = msgs.length - prev;
-      toast(`+${n} new message${n > 1 ? 's' : ''}`, 'ok');
-    }
   } catch {}
 }
 
@@ -831,47 +1028,64 @@ async function refresh() {
   $('rfIcon').classList.remove('spin');
 }
 
+/* ── Notifications ─────────────────────────────────────────────────────── */
+function requestNotifPermission() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'default') Notification.requestPermission();
+}
+
+function showNotif(msg, acctIdx) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const acct = S.accounts[acctIdx];
+  if (!acct) return;
+  try {
+    const n = new Notification(getLabel(acct.email), {
+      body: (msg.subject || '(no subject)') + '\n' + displayName(msg.from_addr || ''),
+      tag: msg.id,
+    });
+    n.onclick = () => { window.focus(); selectAccount(acctIdx); openMsg(msg.id, acctIdx); };
+  } catch {}
+}
+
 /* ── Open message ──────────────────────────────────────────────────────── */
 async function openMsg(msgId, acctIdx) {
   S.selectedMsgId = msgId;
   renderMsgList();
   const viewer = $('viewer');
 
-  // History mode: load from cache only
+  // History mode — load from cache only
   if (S.historyIdx >= 0) {
     const h = S.history[S.historyIdx];
-    const meta = h.msgs.find(m => m.id === msgId);
+    const meta  = (h.msgs||[]).find(m => m.id === msgId);
     const bodies = loadBodies(h.email);
-    const body = bodies[msgId];
+    const body  = bodies[msgId];
     if (meta && body) {
       renderEmail({...meta, ...body});
     } else if (meta) {
-      renderEmail({...meta, body_html: null, body_text: '(body not cached — message was not opened before archiving)'});
+      renderEmail({...meta, body_html:null, body_text:'(body not cached — message was not opened before archiving)', attachments:[]});
     } else {
       viewer.innerHTML = `<div class="email-loading" style="color:var(--t3)">Message not cached</div>`;
     }
+    S._mobileView = 'viewer'; applyMobileView();
     return;
   }
 
   const acct = acctIdx !== undefined
     ? S.accounts[acctIdx]
     : S.accounts[S.activeIdx] ?? S.accounts.find(a => a.msgs.some(m => m.id === msgId));
-  viewer.innerHTML = `
-    <div class="email-loading">
-      <div class="spin-ring"></div>loading…
-    </div>`;
+
+  viewer.innerHTML = `<div class="email-loading"><div class="spin-ring"></div>loading…</div>`;
 
   try {
-    const r = await fetch(
-      `${API}/email/${enc(acct.email)}/message/${enc(msgId)}?token=${enc(acct.token)}&name=${enc(acct.provider)}`
-    );
+    const r = await fetch(`${API}/email/${enc(acct.email)}/message/${enc(msgId)}?token=${enc(acct.token)}&name=${enc(acct.provider)}`);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const msg = await r.json();
     // Cache body
     const bodies = loadBodies(acct.email);
-    bodies[msgId] = {body_html: msg.body_html, body_text: msg.body_text};
+    bodies[msgId] = {body_html:msg.body_html, body_text:msg.body_text, attachments:msg.attachments||[]};
     saveBodies(acct.email, bodies);
     renderEmail(msg);
+    S._mobileView = 'viewer'; applyMobileView();
   } catch(e) {
     viewer.innerHTML = `<div class="email-loading" style="color:var(--err)">${esc(e.message)}</div>`;
   }
@@ -881,46 +1095,47 @@ async function openMsg(msgId, acctIdx) {
 function renderEmail(msg) {
   const viewer = $('viewer');
   viewer.innerHTML = '';
-
   const view = el('div', 'email-view');
 
-  /* header — built via DOM to guarantee no innerHTML injection */
+  // Header
   const head = el('div', 'email-head');
-
-  const subjectEl = el('div', 'email-subject');
-  subjectEl.textContent = msg.subject || '(no subject)';
+  const subjectEl = el('div', 'email-subject'); subjectEl.textContent = msg.subject || '(no subject)';
   head.appendChild(subjectEl);
 
   const metaGrid = el('div', 'meta-grid');
-  [['From', msg.from_addr], ['To', msg.to_addr], ['Date', fmtDate(msg.created_at)]].forEach(([k, v]) => {
+  const toLabel = (() => {
+    const acct = S.accounts.find(a => a.email === msg.to_addr);
+    return acct ? getLabel(acct.email) : (msg.to_addr || '—');
+  })();
+  [['From', msg.from_addr], ['To', toLabel], ['Date', fmtDate(msg.created_at)]].forEach(([k, v]) => {
     const row = el('div', 'meta-row');
     const key = el('span', 'meta-k'); key.textContent = k;
     const val = el('span', 'meta-v'); val.textContent = v || '—';
-    row.appendChild(key); row.appendChild(val);
-    metaGrid.appendChild(row);
+    row.appendChild(key); row.appendChild(val); metaGrid.appendChild(row);
   });
   head.appendChild(metaGrid);
 
   const actions = el('div', 'head-actions');
+  const backBtn = el('button', 'back-btn');
+  backBtn.innerHTML = '← Back';
+  backBtn.onclick = () => { S._mobileView='list'; applyMobileView(); S.selectedMsgId=null; renderViewer(); };
   const darkBtn = el('button', 'pill' + (S.darkEmail ? ' on' : ''));
   darkBtn.id = 'darkBtn'; darkBtn.textContent = 'dark'; darkBtn.onclick = toggleDark;
-  actions.appendChild(darkBtn);
+  actions.appendChild(backBtn); actions.appendChild(darkBtn);
   head.appendChild(actions);
-
   view.appendChild(head);
 
-  /* body */
+  // Body
   const body = el('div', 'email-body');
-
   if (msg.body_html) {
     const iframe = document.createElement('iframe');
     iframe.className = 'email-iframe' + (S.darkEmail ? ' dark' : '');
     iframe.id = 'emailFrame';
-    // No scripts, no forms, no top navigation, no popups.
-    // allow-same-origin is kept solely for contentDocument height detection;
-    // it is safe here because allow-scripts is absent (scripts cannot execute).
     iframe.setAttribute('sandbox', 'allow-same-origin');
-    iframe.srcdoc = msg.body_html;
+    const clean = window.DOMPurify
+      ? DOMPurify.sanitize(msg.body_html, {USE_PROFILES:{html:true}})
+      : msg.body_html;
+    iframe.srcdoc = clean;
     iframe.onload = () => {
       try {
         const h = iframe.contentDocument.documentElement.scrollHeight;
@@ -930,25 +1145,48 @@ function renderEmail(msg) {
     };
     body.appendChild(iframe);
   } else if (msg.body_text) {
-    const pre = el('div', 'email-text');
-    pre.textContent = msg.body_text;
-    body.appendChild(pre);
+    const pre = el('div', 'email-text'); pre.textContent = msg.body_text; body.appendChild(pre);
   } else {
-    const none = el('div', 'email-none');
-    none.textContent = 'No content.';
-    body.appendChild(none);
+    const none = el('div', 'email-none'); none.textContent = 'No content.'; body.appendChild(none);
   }
-
   view.appendChild(body);
+
+  // Attachments
+  renderAttachments(msg.attachments || [], view);
+
   viewer.appendChild(view);
+}
+
+function renderAttachments(attachments, container) {
+  if (!attachments || !attachments.length) return;
+  const section = el('div', 'attach-section');
+  const title = el('div', 'attach-title'); title.textContent = 'Attachments';
+  section.appendChild(title);
+  attachments.forEach(att => {
+    const row = el('div', 'attach-row');
+    const icon = el('span', 'attach-icon'); icon.textContent = '📎';
+    const name = el('span', 'attach-name');
+    name.textContent = att.filename || att.name || 'attachment';
+    name.title = att.filename || att.name || '';
+    const size = el('span', 'attach-size'); size.textContent = fmtSize(att.size);
+    row.appendChild(icon); row.appendChild(name); row.appendChild(size);
+    if (att.url) {
+      const a = document.createElement('a');
+      a.className = 'attach-dl'; a.href = att.url;
+      a.download = att.filename || att.name || 'attachment';
+      a.textContent = '↓ Download';
+      row.appendChild(a);
+    }
+    section.appendChild(row);
+  });
+  container.appendChild(section);
 }
 
 function injectDarkImages(iframe) {
   try {
     const doc = iframe.contentDocument;
     if (!doc.getElementById('_tmdark')) {
-      const s = doc.createElement('style');
-      s.id = '_tmdark';
+      const s = doc.createElement('style'); s.id = '_tmdark';
       s.textContent = 'img,video{filter:invert(1) hue-rotate(180deg) !important}';
       doc.head.appendChild(s);
     }
@@ -956,20 +1194,13 @@ function injectDarkImages(iframe) {
 }
 
 function removeDarkImages(iframe) {
-  try {
-    const s = iframe.contentDocument.getElementById('_tmdark');
-    if (s) s.remove();
-  } catch {}
+  try { const s = iframe.contentDocument.getElementById('_tmdark'); if (s) s.remove(); } catch {}
 }
 
 function toggleDark() {
   S.darkEmail = !S.darkEmail;
-  const frame = $('emailFrame');
-  const btn   = $('darkBtn');
-  if (frame) {
-    frame.classList.toggle('dark', S.darkEmail);
-    S.darkEmail ? injectDarkImages(frame) : removeDarkImages(frame);
-  }
+  const frame = $('emailFrame'), btn = $('darkBtn');
+  if (frame) { frame.classList.toggle('dark', S.darkEmail); S.darkEmail ? injectDarkImages(frame) : removeDarkImages(frame); }
   if (btn) btn.classList.toggle('on', S.darkEmail);
 }
 
@@ -982,121 +1213,52 @@ function startAuto() {
 }
 function stopAuto() {
   S.autoOn = false;
-  const b = $('autoBtn');
-  if (b) b.classList.remove('on');
+  const b = $('autoBtn'); if (b) b.classList.remove('on');
   clearInterval(S.autoTimer);
 }
 
+/* ── Mobile view ───────────────────────────────────────────────────────── */
+function applyMobileView() {
+  const mp = $('msgPanel'), vp = $('viewer');
+  if (window.innerWidth > 600) {
+    mp.classList.remove('hidden'); vp.classList.remove('hidden'); return;
+  }
+  if (S._mobileView === 'viewer') {
+    mp.classList.add('hidden'); vp.classList.remove('hidden');
+  } else {
+    mp.classList.remove('hidden'); vp.classList.add('hidden');
+  }
+}
+window.addEventListener('resize', applyMobileView);
+
 /* ── Render ────────────────────────────────────────────────────────────── */
 function renderAll() {
-  renderAccounts();
+  renderTabs();
   renderHistory();
   renderMsgList();
   if (!S.selectedMsgId) renderViewer();
-  $('inboxBar').style.display = (S.accounts.length || S.historyIdx >= 0) ? 'flex' : 'none';
-}
-
-function renderAccounts() {
-  const wrap = $('accs');
-  wrap.querySelectorAll('.acc-row').forEach(e => e.remove());
-  $('noAccs').style.display = S.accounts.length ? 'none' : '';
-
-  if (S.accounts.length) {
-    // "All" row
-    const allRow = el('div', 'acc-row' + (S.activeIdx === -1 ? ' active' : ''));
-    const allInd = el('div', 'acc-indicator' + (S.accounts.some(a => a.msgs.length) ? ' live' : ''));
-    const allLabel = el('div', 'acc-email');
-    allLabel.textContent = 'all accounts';
-    allLabel.style.fontStyle = 'italic';
-    allRow.appendChild(allInd);
-    allRow.appendChild(allLabel);
-    const total = S.accounts.reduce((s, a) => s + a.msgs.length, 0);
-    if (total) {
-      const badge = el('div', 'acc-count'); badge.textContent = total;
-      allRow.appendChild(badge);
-    }
-    allRow.onclick = () => { S.activeIdx = -1; S.selectedMsgId = null; save(); renderAll(); };
-    wrap.appendChild(allRow);
-  }
-
-  S.accounts.forEach((acct, i) => {
-    const row = el('div', 'acc-row' + (i === S.activeIdx ? ' active' : ''));
-    const ind = el('div', 'acc-indicator' + (acct.msgs.length ? ' live' : ''));
-    const addr = el('div', 'acc-email');
-    addr.textContent = acct.email;
-    addr.title = `${acct.email} — click to copy`;
-    addr.onclick = e => { e.stopPropagation(); copyEmail(acct.email, addr, i); };
-
-    const focusBtn = el('button', 'acc-focus');
-    focusBtn.title = 'Focus';
-    focusBtn.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>`;
-    focusBtn.onclick = e => { e.stopPropagation(); selectAccount(i); };
-
-    const isPinned = S._pinned.some(p => p.email === acct.email);
-    const pinBtn = el('button', 'acc-focus' + (isPinned ? ' pinned-on' : ''));
-    pinBtn.title = isPinned ? 'Unpin (shared)' : 'Pin / share with everyone';
-    pinBtn.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="${isPinned ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M16 1l-1.5 1.5L16 4l-4 4-3-1-5 5 3 3-3 3h4l2-2 3 3 5-5-1-3 4-4 1.5 1.5L22 8z"/></svg>`;
-    pinBtn.onclick = e => { e.stopPropagation(); isPinned ? unpinEmail(acct.email) : pinEmail(i); };
-
-    const xBtn = el('button', 'acc-x');
-    xBtn.textContent = '×';
-    xBtn.title = 'Delete';
-    xBtn.onclick = e => deleteAccount(i, e);
-
-    row.appendChild(ind);
-    row.appendChild(addr);
-    if (acct.msgs.length) {
-      const badge = el('div', 'acc-count'); badge.textContent = acct.msgs.length;
-      row.appendChild(badge);
-    }
-    row.appendChild(pinBtn);
-    row.appendChild(focusBtn);
-    row.appendChild(xBtn);
-    row.onclick = () => selectAccount(i);
-    wrap.appendChild(row);
-  });
+  $('mpHeader').style.display = (S.accounts.length || S.historyIdx >= 0) ? 'flex' : 'none';
 }
 
 function renderHistory() {
-  const wrap = $('archList');
-  const hdr  = $('archHdr');
+  const wrap = $('archList'), hdr = $('archHdr');
   if (!wrap) return;
-  if (!S.history.length) {
-    wrap.style.display = 'none';
-    hdr.style.display  = 'none';
-    return;
-  }
+  if (!S.history.length) { wrap.style.display = 'none'; hdr.style.display = 'none'; return; }
   hdr.style.display = '';
-  if (wrap.style.display === 'none' && S.historyIdx < 0) return; // collapsed
-
+  if (wrap.style.display === 'none' && S.historyIdx < 0) return;
   wrap.innerHTML = '';
   S.history.forEach((h, i) => {
     const row = el('div', 'acc-row hist-row' + (i === S.historyIdx ? ' active' : ''));
-    const addr = el('div', 'acc-email');
-    addr.textContent = h.email;
-    addr.title = h.email;
-    const cnt = el('div', 'acc-count arch-cnt');
-    cnt.textContent = (h.msgs||[]).length || '';
+    const addr = el('div', 'acc-email'); addr.textContent = getLabel(h.email); addr.title = h.email;
+    const cnt = el('div', 'acc-count'); cnt.textContent = (h.msgs||[]).length;
     cnt.style.display = (h.msgs||[]).length ? '' : 'none';
-    const xBtn = el('button', 'acc-x');
-    xBtn.textContent = '×';
-    xBtn.title = 'Remove from archive';
+    cnt.style.background = 'var(--b2)'; cnt.style.color = 'var(--t3)';
+    const xBtn = el('button', 'acc-x'); xBtn.textContent = '×'; xBtn.title = 'Remove from archive';
     xBtn.onclick = e => removeHistory(i, e);
-    row.appendChild(addr);
-    row.appendChild(cnt);
-    row.appendChild(xBtn);
+    row.appendChild(addr); row.appendChild(cnt); row.appendChild(xBtn);
     row.onclick = () => selectHistory(i);
     wrap.appendChild(row);
   });
-}
-
-let _archOpen = true;
-function toggleArchive() {
-  const wrap = $('archList');
-  const chev = $('archChev');
-  _archOpen = !_archOpen;
-  wrap.style.display = _archOpen ? '' : 'none';
-  if (chev) chev.style.transform = _archOpen ? '' : 'rotate(-90deg)';
 }
 
 function renderMsgList() {
@@ -1106,18 +1268,17 @@ function renderMsgList() {
   if (S.historyIdx >= 0) {
     const h = S.history[S.historyIdx];
     if (!h) { list.innerHTML = ''; return; }
-    const msgs = (h.msgs || []).map(m => ({...m, _acctEmail: null, _acctIdx: -1}));
-    if (!msgs.length) {
-      list.innerHTML = `<div class="empty-inbox"><div class="empty-hint">No messages saved</div></div>`;
-      return;
-    }
+    const msgs = (h.msgs||[]);
+    if (!msgs.length) { list.innerHTML = `<div class="empty-inbox"><div class="empty-hint">No messages saved</div></div>`; return; }
     list.innerHTML = '';
     msgs.forEach(msg => {
       const row = el('div', 'msg-row' + (msg.id === S.selectedMsgId ? ' active' : ''));
+      const inner = el('div', 'msg-row-inner');
       const from = el('div', 'msg-from'); from.textContent = displayName(msg.from_addr || '');
       const subj = el('div', 'msg-subj'); subj.textContent = msg.subject || '(no subject)';
       const time = el('div', 'msg-time'); time.textContent = rel(msg.created_at);
-      row.appendChild(from); row.appendChild(subj); row.appendChild(time);
+      inner.appendChild(from); inner.appendChild(subj); inner.appendChild(time);
+      row.appendChild(inner);
       row.onclick = () => openMsg(msg.id);
       list.appendChild(row);
     });
@@ -1129,7 +1290,7 @@ function renderMsgList() {
   let msgs;
   if (S.activeIdx === -1) {
     msgs = S.accounts.flatMap((acct, idx) =>
-      acct.msgs.map(m => ({...m, _acctEmail: acct.email, _acctIdx: idx}))
+      acct.msgs.map(m => ({...m, _acctEmail:acct.email, _acctIdx:idx}))
     ).sort((a, b) => {
       const da = isNaN(+a.created_at) ? new Date(a.created_at) : new Date(+a.created_at * 1000);
       const db = isNaN(+b.created_at) ? new Date(b.created_at) : new Date(+b.created_at * 1000);
@@ -1138,35 +1299,43 @@ function renderMsgList() {
   } else {
     const acct = S.accounts[S.activeIdx];
     if (!acct) { list.innerHTML = ''; return; }
-    msgs = acct.msgs.map(m => ({...m, _acctEmail: null, _acctIdx: S.activeIdx}));
+    msgs = acct.msgs.map(m => ({...m, _acctEmail:null, _acctIdx:S.activeIdx}));
   }
 
+  // Filter dismissed
+  msgs = msgs.filter(m => {
+    const email = m._acctEmail || (S.accounts[m._acctIdx]||{}).email;
+    return !(S._dismissed[email]||[]).includes(m.id);
+  });
+
   if (!msgs.length) {
-    list.innerHTML = `
-      <div class="empty-inbox">
-        <div class="empty-art">┌─────────┐\n│         │\n│  empty  │\n│         │\n└─────────┘</div>
-        <div class="empty-hint">Waiting for mail…</div>
-      </div>`;
+    list.innerHTML = `<div class="empty-inbox">
+      <div class="empty-art">┌─────────┐\n│         │\n│  empty  │\n│         │\n└─────────┘</div>
+      <div class="empty-hint">Waiting for mail…</div>
+    </div>`;
     return;
   }
 
   list.innerHTML = '';
   msgs.forEach(msg => {
+    const email = msg._acctEmail || (S.accounts[msg._acctIdx]||{}).email || '';
     const row = el('div', 'msg-row' + (msg.id === S.selectedMsgId ? ' active' : ''));
-    const from = el('div', 'msg-from');
-    from.textContent = displayName(msg.from_addr || '');
-    const subj = el('div', 'msg-subj');
-    subj.textContent = msg.subject || '(no subject)';
+    const inner = el('div', 'msg-row-inner');
+    const from = el('div', 'msg-from'); from.textContent = displayName(msg.from_addr || '');
+    const subj = el('div', 'msg-subj'); subj.textContent = msg.subject || '(no subject)';
     if (msg._acctEmail) {
-      const acctLbl = el('div', 'msg-acct');
-      acctLbl.textContent = msg._acctEmail;
-      row.appendChild(from); row.appendChild(subj); row.appendChild(acctLbl);
+      const acctLbl = el('div', 'msg-acct'); acctLbl.textContent = getLabel(msg._acctEmail);
+      inner.appendChild(from); inner.appendChild(subj); inner.appendChild(acctLbl);
     } else {
-      row.appendChild(from); row.appendChild(subj);
+      inner.appendChild(from); inner.appendChild(subj);
     }
-    const time = el('div', 'msg-time');
-    time.textContent = rel(msg.created_at);
-    row.appendChild(time);
+    const time = el('div', 'msg-time'); time.textContent = rel(msg.created_at);
+    inner.appendChild(time);
+
+    const xBtn = el('button', 'msg-dismiss'); xBtn.textContent = '×'; xBtn.title = 'Dismiss';
+    xBtn.onclick = e => dismissMsg(msg.id, email, e);
+
+    row.appendChild(inner); row.appendChild(xBtn);
     row.onclick = () => openMsg(msg.id, msg._acctIdx);
     list.appendChild(row);
   });
@@ -1178,63 +1347,41 @@ function renderViewer() {
     const h = S.history[S.historyIdx];
     viewer.innerHTML = `
       <div class="v-empty">
-        <div class="v-empty-logo" style="font-size:12px;color:var(--t3);font-family:var(--mono)">${esc(h.email)}</div>
+        <div class="v-empty-logo" style="font-size:12px;color:var(--t3);font-family:var(--mono)">${esc(getLabel(h.email))}</div>
         <div class="v-empty-sub" style="color:var(--t3)">archived · ${fmtDate(h.archivedAt/1000)}</div>
         <div class="v-empty-sub">Select a message to read it</div>
       </div>`;
     return;
   }
   if (!S.accounts.length) {
-    viewer.innerHTML = `
-      <div class="v-empty">
-        <div class="v-empty-logo">[tempmail·]</div>
-        <div class="v-empty-sub">Generate a mailbox to get started</div>
-      </div>`;
+    viewer.innerHTML = `<div class="v-empty"><div class="v-empty-logo">[tempmail·]</div><div class="v-empty-sub">Generate a mailbox to get started</div></div>`;
     return;
   }
   if (S.activeIdx === -1) {
-    viewer.innerHTML = `
-      <div class="v-empty">
-        <div class="v-empty-logo" style="font-size:13px;color:var(--t3);font-family:var(--mono);font-style:italic">all accounts</div>
-        <div class="v-empty-sub">Select a message to read it</div>
-      </div>`;
+    viewer.innerHTML = `<div class="v-empty"><div class="v-empty-logo" style="font-size:13px;color:var(--t3);font-family:var(--mono);font-style:italic">all accounts</div><div class="v-empty-sub">Select a message to read it</div></div>`;
     return;
   }
   const acct = S.accounts[S.activeIdx];
   if (!acct) {
-    viewer.innerHTML = `
-      <div class="v-empty">
-        <div class="v-empty-logo">[tempmail·]</div>
-        <div class="v-empty-sub">Generate a mailbox to get started</div>
-      </div>`;
+    viewer.innerHTML = `<div class="v-empty"><div class="v-empty-logo">[tempmail·]</div><div class="v-empty-sub">Generate a mailbox to get started</div></div>`;
     return;
   }
-  viewer.innerHTML = `
-    <div class="v-empty">
-      <div class="v-empty-logo" style="font-size:13px;color:var(--t3);font-family:var(--mono)">${esc(acct.email)}</div>
-      <div class="v-empty-sub">Select a message to read it</div>
-    </div>`;
+  viewer.innerHTML = `<div class="v-empty"><div class="v-empty-logo" style="font-size:13px;color:var(--t3);font-family:var(--mono)">${esc(getLabel(acct.email))}</div><div class="v-empty-sub">Select a message to read it</div></div>`;
 }
 
 /* ── Toast ─────────────────────────────────────────────────────────────── */
 function toast(msg, type = '') {
-  const t = el('div', 'toast ' + type);
-  t.textContent = msg;
+  const t = el('div', 'toast ' + type); t.textContent = msg;
   $('toasts').appendChild(t);
-  setTimeout(() => {
-    t.classList.add('out');
-    setTimeout(() => t.remove(), 160);
-  }, 2600);
+  setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 160); }, 2600);
 }
 
 /* ── Utils ─────────────────────────────────────────────────────────────── */
-function $(id)   { return document.getElementById(id); }
+function $(id)  { return document.getElementById(id); }
 function el(tag, cls) { const e = document.createElement(tag); e.className = cls; return e; }
-function enc(s)  { return encodeURIComponent(s); }
-function esc(s)  {
-  return String(s)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function enc(s) { return encodeURIComponent(s); }
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 function displayName(s) {
   const m = s.match(/^"?([^"<]+?)"?\s*</);
@@ -1256,15 +1403,29 @@ function fmtDate(ts) {
     return d.toLocaleString(undefined, {dateStyle:'medium', timeStyle:'short'});
   } catch { return '—'; }
 }
+function fmtSize(bytes) {
+  if (!bytes) return '';
+  if (bytes < 1024) return `${bytes}B`;
+  if (bytes < 1048576) return `${(bytes/1024).toFixed(0)}KB`;
+  return `${(bytes/1048576).toFixed(1)}MB`;
+}
 
 /* ── Copy email ────────────────────────────────────────────────────────── */
-function copyEmail(email, el, idx) {
+function copyEmail(email, elRef, idx) {
   navigator.clipboard.writeText(email).then(() => {
-    el.classList.add('flash');
-    setTimeout(() => el.classList.remove('flash'), 900);
+    elRef.classList.add('flash');
+    setTimeout(() => elRef.classList.remove('flash'), 900);
     toast('Copied', 'ok');
     selectAccount(idx);
   }).catch(() => toast('Clipboard unavailable', 'err'));
+}
+
+let _archOpen = true;
+function toggleArchive() {
+  const wrap = $('archList'), chev = $('archChev');
+  _archOpen = !_archOpen;
+  wrap.style.display = _archOpen ? '' : 'none';
+  if (chev) chev.style.transform = _archOpen ? '' : 'rotate(-90deg)';
 }
 
 /* ── Init ──────────────────────────────────────────────────────────────── */
@@ -1277,6 +1438,7 @@ loadPinned();
 setInterval(loadPinned, 15000);
 S.accounts.forEach((_, i) => refreshAccount(i));
 startAuto();
+applyMobileView();
 </script>
 </body>
 </html>
