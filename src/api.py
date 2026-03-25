@@ -16,10 +16,6 @@ from .providers import EmailAccount, EmailProvider
 log = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# Lifespan
-# ---------------------------------------------------------------------------
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     shared_store.load()
@@ -27,10 +23,6 @@ async def lifespan(app: FastAPI):
     yield
     await registry.shutdown()
 
-
-# ---------------------------------------------------------------------------
-# App
-# ---------------------------------------------------------------------------
 
 app = FastAPI(
     title="TempMail API",
@@ -41,10 +33,6 @@ app = FastAPI(
     openapi_url="/openapi.json",
 )
 
-
-# ---------------------------------------------------------------------------
-# Schemas
-# ---------------------------------------------------------------------------
 
 class CreateEmailRequest(BaseModel):
     min_name_length: int = 10
@@ -69,10 +57,6 @@ class SharedEmailPatch(BaseModel):
     label: str
 
 
-# ---------------------------------------------------------------------------
-# Dependency
-# ---------------------------------------------------------------------------
-
 def get_provider(name: Optional[str] = Query(default=None)) -> EmailProvider:
     try:
         return registry.get(name)
@@ -81,10 +65,6 @@ def get_provider(name: Optional[str] = Query(default=None)) -> EmailProvider:
     except KeyError as e:
         raise HTTPException(404, str(e))
 
-
-# ---------------------------------------------------------------------------
-# Routes
-# ---------------------------------------------------------------------------
 
 router = APIRouter(prefix="/api")
 
@@ -120,12 +100,7 @@ async def create_email(
     body: CreateEmailRequest = CreateEmailRequest(),
     name: Optional[str] = Query(default=None),
 ):
-    """
-    Create a new temporary email address.
-
-    If `name` is given, use that provider directly.
-    Otherwise, try providers in priority order and return the first success.
-    """
+    """Create a new temporary email address. Uses named provider or falls back through priority order."""
     if name:
         try:
             provider = registry.get(name)
@@ -255,10 +230,7 @@ async def unpin_email(email: str):
 
 @router.get("/health", summary="Health check", tags=["System"])
 async def health():
-    """
-    Check all providers are reachable.
-    Returns 200 if all healthy, 207 (Multi-Status) if some are degraded.
-    """
+    """Returns 200 if all providers healthy, 207 if some are degraded."""
     async def _check(name: str, provider: EmailProvider) -> tuple[str, dict]:
         if registry.is_disabled(name):
             return name, {"status": "disabled", "failures": registry._failures.get(name, 0)}
@@ -273,7 +245,6 @@ async def health():
     results = dict(
         await asyncio.gather(*[_check(n, p) for n, p in registry.all_providers().items()])
     )
-
     all_ok = all(v["status"] in ("ok", "disabled") for v in results.values())
     return JSONResponse(
         status_code=200 if all_ok else 207,
@@ -281,14 +252,9 @@ async def health():
     )
 
 
-# ---------------------------------------------------------------------------
-# Mount router + MCP server + optional static files
-# ---------------------------------------------------------------------------
-
 app.include_router(router)
 
-# MCP server exposed at /mcp (streamable-http transport)
-from .mcp_server import mcp  # noqa: E402 — import after registry is defined
+from .mcp_server import mcp  # noqa: E402
 app.mount("/mcp", mcp.streamable_http_app())
 
 _enable_frontend = os.getenv("ENABLE_FRONTEND", "true").lower() not in ("0", "false", "no")
